@@ -1,0 +1,66 @@
+MMKERNELSRC(
+
+//matrices A, B and C are copied to __local memory
+
+__kernel void cl_bilinear_alg(
+        __global float * A,
+        __global float * B,
+        __global float * C,
+        __global int * g_sigma,
+        __global int * g_delta,
+        __global float * reserved,
+        __global float * R) // eredmeny
+{
+        __private int index = get_global_id(0);
+        __private int sigma = *g_sigma;
+        __private int delta = *g_delta;
+        __private int delta2 = delta * delta;
+        __private int mat_offset = index * delta2 * sigma;
+        __private int sigma_offset;
+        __private float s1, s2;
+        __private float err = 0;
+        __local float a[207], b[207], c[207];
+
+        for(int k = 0; k < delta2*sigma; ++k)
+        {
+        	a[k] = A[mat_offset + k];
+        	b[k] = B[mat_offset + k];
+        	c[k] = C[mat_offset + k];
+        }
+
+    
+    for (int i = 0; i < delta; ++i)
+    {
+        for (int j = 0; j < delta; ++j)
+        {
+                for (int k = 0; k < delta; ++k)
+                {
+                        for (int l = 0; l < delta; ++l)
+                        {
+                                for (int m = 0; m < delta; ++m)
+                                {
+                                        for (int n = 0; n < delta; ++n)
+                                        {
+                                                s1 = (n == i) * (j == k) * (l == m);
+                                                s2 = 0;
+                                                
+                                                for (int r = 0; r < sigma; ++r)
+                                                {
+                                                        sigma_offset=delta2*r;
+                                                        s2 += a[sigma_offset + i * delta + j] *
+                                                              b[sigma_offset + k * delta + l] *
+                                                              c[sigma_offset + m * delta + n];
+                                                }                                                             
+
+                                                        err += (s2 - s1) * (s2 - s1);                                                           
+                                                }
+                                        }
+                                }
+                        }
+                }
+        }
+        
+        R[index] = 1.0f / (1.0f + err);
+}
+
+);

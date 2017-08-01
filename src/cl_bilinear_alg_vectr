@@ -1,0 +1,97 @@
+MMKERNELSRC(
+
+    //improvement on cl_bilinear_alg_reord:
+    //use built-in float array types
+
+    __kernel void cl_bilinear_alg(
+        __global float * A,
+        __global float * B,
+        __global float * C,
+        __global int * g_sigma,
+        __global int * g_delta,
+        __global float * reserved,
+        __global float * R) // eredmeny
+{
+    __private int index = get_global_id(0);
+    __private int sigma = *g_sigma;
+    __private int csigma = ceil(sigma / 4.0f);
+    __private int delta = *g_delta;
+    __private int delta2 = delta * delta;
+    __private int mat_offset = index * delta2 * sigma;
+    __private float s1, s2;
+    __private float err = 0;
+    __private float4 vzero = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
+
+    //todo: these magical constants are UGLY; come up with a method to get rid of them
+    __local float4 va[54], vb[54], vc[54];
+
+    for (int ij = 0, k = 0; ij < delta2; ++ij)
+        {
+            int r = 0;
+            for (; r < sigma/4; r += 4, ++k)
+                {
+                    int idx0 = mat_offset + delta2 * r + ij;
+                    int idx1 = mat_offset + delta2 * (r+1) + ij;
+                    int idx2 = mat_offset + delta2 * (r+2) + ij;
+                    int idx3 = mat_offset + delta2 * (r+3) + ij;
+
+                    va[k] = (float4)(A[idx0], A[idx1], A[idx2], A[idx3]);
+                    vb[k] = (float4)(B[idx0], B[idx1], B[idx2], B[idx3]);
+                    vc[k] = (float4)(C[idx0], C[idx1], C[idx2], C[idx3]);
+                }
+
+            if (sigma % 4)
+                {
+                    float buffa[4] = {0}, buffb[4] = {0}, buffc[4] = {0};
+
+                    for (; r < sigma; ++r)
+                        {
+                            int idx = mat_offset + delta2 * r + ij;
+                            buffa[r % 4] = A[idx];
+                            buffb[r % 4] = B[idx];
+                            buffc[r % 4] = C[idx];
+                        }
+
+                    va[k] = vload4(0, buffa);
+                    vb[k] = vload4(0, buffb);
+                    vc[k] = vload4(0, buffc);
+
+                    ++k;
+                }
+        }
+
+    for (int i = 0; i < delta; ++i)
+        {
+            for (int j = 0; j < delta; ++j)
+                {
+                    for (int k = 0; k < delta; ++k)
+                        {
+                            for (int l = 0; l < delta; ++l)
+                                {
+                                    for (int m = 0; m < delta; ++m)
+                                        {
+                                            for (int n = 0; n < delta; ++n)
+                                                {
+                                                    s1 = (n == i) * (j == k) * (l == m);
+                                                    s2 = 0;
+
+                                                    int ij = csigma * (i * delta + j);
+                                                    int kl = csigma * (k * delta + l);
+                                                    int mn = csigma * (m * delta + n);
+
+                                                    for (int r = 0; r < csigma; ++r)
+                                                        s2 += dot(va[ij+r], mad(vb[kl+r], vc[mn+r], vzero));
+
+                                                    err += (s2 - s1) * (s2 - s1);
+                                                }
+                                        }
+                                }
+                        }
+                }
+        }
+
+
+    R[index] = 1.0f / (1.0f + err);
+}
+
+);

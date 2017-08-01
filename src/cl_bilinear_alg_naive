@@ -1,0 +1,55 @@
+MMKERNELSRC(
+
+//naive algorithm, without any optimization
+
+__kernel void cl_bilinear_alg(
+	__global float * A,
+	__global float * B,
+	__global float * C,
+	__global int * g_sigma,
+	__global int * g_delta,
+	__global float * reserved,
+	__global float * R) // eredmeny
+{
+	__private int index = get_global_id(0);
+	__private int sigma = *g_sigma;
+	__private int delta = *g_delta;
+	__private int delta2 = delta * delta;
+    __private int mat_offset = index * delta2 * sigma;
+    __private float s1, s2;
+    __private float err = 0;
+    
+    for (int i = 0; i < delta; ++i)
+    {
+    	for (int j = 0; j < delta; ++j)
+    	{
+    		for (int k = 0; k < delta; ++k)
+    		{
+    			for (int l = 0; l < delta; ++l)
+    			{
+    				for (int m = 0; m < delta; ++m)
+    				{
+    					for (int n = 0; n < delta; ++n)
+    					{
+    						s1 = (n == i) * (j == k) * (l == m);
+    						s2 = 0;
+    						
+    						for (int r = 0; r < sigma; ++r)
+    						{
+    							s2 += A[mat_offset + r * delta2 + i * delta + j] *
+    							      B[mat_offset + r * delta2 + k * delta + l] *
+    							      C[mat_offset + r * delta2 + m * delta + n];
+							}    							      
+
+							err += (s2 - s1) * (s2 - s1);    							
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	R[index] = 1.0f / (1.0f + err);
+}
+
+);
