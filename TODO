@@ -1,0 +1,36 @@
+ROADMAP
+
+1. Ellenorizni, hogy nincs memory leak
+   valgrind --tool=memcheck --leak-check=full bin/tPopEvalGPU.bin
+
+2. Megirni a CPUs verziot a Johnson kiertekelesbol
+
+3. Osszehasonlitani a CPUs es a GPUs implementacio sebesseget
+   Mekkora az a populacio meret, ahol mar erdemes GPU-t hasznalni?
+   (tCompGPUCPU.cpp)   
+
+3.1 Nagy meretu populacio eseten miert all le a GPU kiertekelo a kov hibaval:
+
+[5/28 20:14:59 mGPUContext.cpp--- setupKernel-----  53] setting up kernel cl_bilinear_alg
+Error: Failed to write to source array!
+-4
+
+	Mit lehet tenni ezugyben?
+  
+3.2 A Laderman genom kiertekeleset letesztelni.   
+
+3.3 Hogy lehet felgyorsitani a kernelt?
+
+3.3.1 Jelenleg minden workgroupban egy workitem van, ami nem biztos, hogy a legoptimalisabb. 
+	Kiprobalni nagyobb workgroupokra.
+	
+4. Beilleszteni a kiertekelest egy GASteadyStateGA-ba (lasd a GALib peldaprogramjait)
+
+5. Mereseket vegezni.
+
+6. Uj osztalyt szarmaztatni a GASteadyStateGA-bol, az (5)-os eredmenyeit figyelembe veve.
+
+7. Mereseket vegezni.
+
+8. Writing up.
+      
