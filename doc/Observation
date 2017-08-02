@@ -1,0 +1,18 @@
+With the default steady state genetical algorithm, the higher I set the crossover and mutation ratio the better results I am getting. So far I've got 0.9999 with 500 000 generations with crossover of 0.95 and replication ratio of 0.95.
+
+Population of 1024 and 1000 generations
+
+Using the Deterministic selection scheme I observed the following:
+If there is no mutation, there is a high percentage that the algorithm finds a local solution not a global one.
+If the crossover is too high(>0.5) the ga tends to develop slowly.
+If the replacement ratio is too low, the ga develops slowly.
+
+Using the stochastic selection scheme:
+Shitty
+
+Using the Rankselector:
+Good results but tends to converge locally fast,trying to increase mutation but bad results.
+Its a good algorithm but tends to converge locally fast.
+
+Using the TournamentSelector:
+
